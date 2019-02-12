@@ -37,7 +37,7 @@
             android:id="@+id/text_minute"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00"
+            android:text="15"
             android:textColor="@color/color_black"
             android:textSize="32sp"
             android:textStyle="bold"

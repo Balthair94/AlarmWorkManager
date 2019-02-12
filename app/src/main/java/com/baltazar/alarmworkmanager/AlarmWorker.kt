@@ -4,23 +4,34 @@ import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.baltazar.alarmworkmanager.util.PreferenceUtil
+import com.baltazar.alarmworkmanager.util.makeStatusNotification
+import java.util.*
 
 /**
  * Created by Baltazar Rodriguez Ramirez on 2/9/19.
  */
-class AlarmWorker(context: Context, params: WorkerParameters): Worker(context, params) {
+class AlarmWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
     companion object {
         const val TAG = "AlarmWorker"
+        const val TIME_TO_REDUCE = "time_to_reduce"
     }
 
     override fun doWork(): Result {
-        val timeInSeconds = inputData.getLong(PreferenceUtil.ALARM_TIME, 0)
+        val preferenceUtil = PreferenceUtil(applicationContext)
+        val currentMinutes = preferenceUtil.getTimeLeft()
+        val timeToReduce = inputData.getLong(TIME_TO_REDUCE, 0)
 
+        Thread.sleep(1000)
         return try {
-            for (i in 0 until timeInSeconds) {
-                PreferenceUtil(applicationContext).reduceAlarmTime()
-                Thread.sleep(1_000)
+            if (currentMinutes <= 0) {
+                preferenceUtil.setMinutes(0)
+                preferenceUtil.setTimeToReduce(0)
+                makeStatusNotification("Time is over, you have to take your medicine", applicationContext)
+            } else {
+                val date = Date(System.currentTimeMillis())
+                preferenceUtil.setWorkerLasExecution(date.time)
+                preferenceUtil.reduceAlarmTime(timeToReduce)
             }
             Result.success()
         } catch (error: Throwable) {
