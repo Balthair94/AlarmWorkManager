@@ -6,10 +6,12 @@ import android.widget.Toast
 import androidx.work.*
 import com.baltazar.alarmworkmanager.util.PreferenceUtil
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.Date
+import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
+
+    val presenter: MainPresenter by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,30 +85,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTimeUi() {
-        val preferenceUtil = PreferenceUtil(this)
-        val currentDate = Date(System.currentTimeMillis()).time
-        val timeLeft = preferenceUtil.getTimeLeft()
-        val workerLastExecutionDate = preferenceUtil.getWorkerLastExecution()
-        val timeToReduce = preferenceUtil.getTimeToReduce()
-
-        if (timeToReduce > 0) {
-
-            val diff = getMinutesDifference(currentDate, workerLastExecutionDate)
-
-            val minutesToNextExecution = timeToReduce - diff
-
-            val newTimeLeft = timeLeft + minutesToNextExecution
-
-            val hours = newTimeLeft.div(60)
-            val minutes = newTimeLeft.rem(60)
-
-            text_hour.text = if (hours <= 9) "0$hours" else "$hours"
-            text_minute.text = if (minutes <= 9) "0$minutes" else "$minutes"
-        }
-    }
-
-    private fun getMinutesDifference(dateNew: Long, dateOld: Long): Long {
-        val diff = dateNew - dateOld
-        return (diff / (60 * 1000)).rem(60)
+        val timeDate = presenter.getTimeLeft()
+        text_hour.text = timeDate.hours
+        text_minute.text = timeDate.minutes
     }
 }
