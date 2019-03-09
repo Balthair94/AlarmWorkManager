@@ -44,5 +44,9 @@ class PreferenceUtil(private val context: Context) {
 
     fun getTimeToReduce(): Long = getPreferences().getLong(TIME_TO_REDUCE, 0)
 
+    fun cleanPreferences() {
+        getPreferences().edit().clear().apply()
+    }
+
     private fun getPreferences() = PreferenceManager.getDefaultSharedPreferences(context)
 }

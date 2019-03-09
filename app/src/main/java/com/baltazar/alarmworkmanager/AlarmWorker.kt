@@ -16,7 +16,7 @@ class AlarmWorker(context: Context, params: WorkerParameters) : Worker(context, 
         const val TAG = "AlarmWorker"
         const val TIME_TO_REDUCE = "time_to_reduce"
 
-        const val ALARM_STATE_RUNNIG = 0
+        const val ALARM_STATE_RUNNING = 0
         const val ALARM_STATE_STOP = 1
     }
 
@@ -27,8 +27,7 @@ class AlarmWorker(context: Context, params: WorkerParameters) : Worker(context, 
 
         return try {
             if (currentMinutes <= 0) {
-                preferenceUtil.setMinutes(0)
-                preferenceUtil.setTimeToReduce(0)
+                preferenceUtil.cleanPreferences()
                 makeStatusNotification("Time is over, you have to take your medicine", applicationContext)
             } else {
                 val date = Date(System.currentTimeMillis())

@@ -1,7 +1,6 @@
 package com.baltazar.alarmworkmanager
 
 import android.content.Context
-import android.widget.Toast
 import androidx.work.WorkManager
 import com.baltazar.alarmworkmanager.util.PreferenceUtil
 import com.baltazar.alarmworkmanager.util.TimeData
@@ -17,9 +16,18 @@ interface UtilRepository {
     fun getPreferences(): PreferenceUtil
 
     fun validateWorkManagerState(): Int
+
+    fun saveMinutes(minutes: Long): Long
+
+    fun saveTimeToReduce(minutes: Long): Long
+
+    fun cleanPreferences()
 }
 
-class UtilRepositoryImpl(private val mContext: Context, private val mPreferences: PreferenceUtil = PreferenceUtil(mContext)): UtilRepository {
+class UtilRepositoryImpl(
+    private val mContext: Context,
+    private val mPreferences: PreferenceUtil = PreferenceUtil(mContext)
+) : UtilRepository {
 
     override fun getTimeLeft(): TimeData? {
         val currentDate = Date(System.currentTimeMillis()).time
@@ -52,16 +60,29 @@ class UtilRepositoryImpl(private val mContext: Context, private val mPreferences
         if (timeToReduce > 0) {
             WorkManager.getInstance().getWorkInfosByTag(AlarmWorker.TAG).get()?.let { statusList ->
                 val isComplete = statusList.all { it.state.isFinished }
-                return if (isComplete) AlarmWorker.ALARM_STATE_RUNNIG else AlarmWorker.ALARM_STATE_STOP
+                return if (isComplete) AlarmWorker.ALARM_STATE_RUNNING else AlarmWorker.ALARM_STATE_STOP
             }
         }
 
         return AlarmWorker.ALARM_STATE_STOP
     }
 
+    override fun saveMinutes(minutes:Long): Long {
+        mPreferences.setMinutes(minutes)
+        return minutes
+    }
+
+    override fun saveTimeToReduce(minutes: Long): Long {
+        mPreferences.setTimeToReduce(minutes)
+        return minutes
+    }
+
+    override fun cleanPreferences() {
+        mPreferences.cleanPreferences()
+    }
+
     private fun getMinutesDifference(dateNew: Long, dateOld: Long): Long {
         val diff = dateNew - dateOld
         return (diff / (60 * 1000)).rem(60)
     }
-
 }
