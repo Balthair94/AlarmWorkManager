@@ -5,7 +5,7 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.baltazar.alarmworkmanager.util.PreferenceUtil
 import com.baltazar.alarmworkmanager.util.makeStatusNotification
-import java.util.*
+import java.util.Date
 
 /**
  * Created by Baltazar Rodriguez Ramirez on 2/9/19.
@@ -15,6 +15,9 @@ class AlarmWorker(context: Context, params: WorkerParameters) : Worker(context, 
     companion object {
         const val TAG = "AlarmWorker"
         const val TIME_TO_REDUCE = "time_to_reduce"
+
+        const val ALARM_STATE_RUNNIG = 0
+        const val ALARM_STATE_STOP = 1
     }
 
     override fun doWork(): Result {
@@ -22,7 +25,6 @@ class AlarmWorker(context: Context, params: WorkerParameters) : Worker(context, 
         val currentMinutes = preferenceUtil.getTimeLeft()
         val timeToReduce = inputData.getLong(TIME_TO_REDUCE, 0)
 
-        Thread.sleep(1000)
         return try {
             if (currentMinutes <= 0) {
                 preferenceUtil.setMinutes(0)

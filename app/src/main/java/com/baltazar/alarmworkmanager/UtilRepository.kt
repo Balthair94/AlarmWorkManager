@@ -1,25 +1,31 @@
 package com.baltazar.alarmworkmanager
 
 import android.content.Context
+import android.widget.Toast
+import androidx.work.WorkManager
 import com.baltazar.alarmworkmanager.util.PreferenceUtil
 import com.baltazar.alarmworkmanager.util.TimeData
-import java.util.*
+import java.util.Date
 
 /**
  * Created by Baltazar Rodriguez Ramirez on 2/28/19.
  */
 interface UtilRepository {
-    fun getTimeLeft(): TimeData
+
+    fun getTimeLeft(): TimeData?
+
+    fun getPreferences(): PreferenceUtil
+
+    fun validateWorkManagerState(): Int
 }
 
-class UtilRepositoryImpl(private val mContext: Context): UtilRepository {
+class UtilRepositoryImpl(private val mContext: Context, private val mPreferences: PreferenceUtil = PreferenceUtil(mContext)): UtilRepository {
 
-    override fun getTimeLeft(): TimeData {
-        val preferenceUtil = PreferenceUtil(mContext)
+    override fun getTimeLeft(): TimeData? {
         val currentDate = Date(System.currentTimeMillis()).time
-        val timeLeft = preferenceUtil.getTimeLeft()
-        val workerLastExecutionDate = preferenceUtil.getWorkerLastExecution()
-        val timeToReduce = preferenceUtil.getTimeToReduce()
+        val timeLeft = mPreferences.getTimeLeft()
+        val workerLastExecutionDate = mPreferences.getWorkerLastExecution()
+        val timeToReduce = mPreferences.getTimeToReduce()
 
         if (timeToReduce > 0) {
 
@@ -32,13 +38,25 @@ class UtilRepositoryImpl(private val mContext: Context): UtilRepository {
             val hours = newTimeLeft.div(60)
             val minutes = newTimeLeft.rem(60)
 
-            val hour = if (hours <= 9) "0$hours" else "$hours"
-            val minute = if (minutes <= 9) "0$minutes" else "$minutes"
-
-            return TimeData(hour, minute)
+            return TimeData(hours, minutes)
         }
 
-        return TimeData("0", "0")
+        return null
+    }
+
+    override fun getPreferences() = mPreferences
+
+    override fun validateWorkManagerState(): Int {
+        val timeToReduce = mPreferences.getTimeLeft()
+
+        if (timeToReduce > 0) {
+            WorkManager.getInstance().getWorkInfosByTag(AlarmWorker.TAG).get()?.let { statusList ->
+                val isComplete = statusList.all { it.state.isFinished }
+                return if (isComplete) AlarmWorker.ALARM_STATE_RUNNIG else AlarmWorker.ALARM_STATE_STOP
+            }
+        }
+
+        return AlarmWorker.ALARM_STATE_STOP
     }
 
     private fun getMinutesDifference(dateNew: Long, dateOld: Long): Long {
